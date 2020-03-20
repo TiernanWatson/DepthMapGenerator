@@ -72,13 +72,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Libs\glm-0.9.9.6\glm;D:\Libs\glfw3.3\include;D:\Libs\assimp-4.1.0\Build\include;D:\Libs\assimp-4.1.0\include;D:\Libs\glad\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Libs\glfw3.3\lib;D:\Libs\assimp-4.1.0\Build\code\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Libs\FreeImage3180Win32Win64\FreeImage\Dist\x64;D:\Libs\glm-0.9.9.6\glm;D:\Libs\glfw3.3\include;D:\Libs\assimp-4.1.0\Build\include;D:\Libs\assimp-4.1.0\include;D:\Libs\glad\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Libs\FreeImage3180Win32Win64\FreeImage\Dist\x64;D:\Libs\glfw3.3\lib;D:\Libs\assimp-4.1.0\Build\code\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Libs\glm-0.9.9.6\glm;D:\Libs\glfw3.3\include;D:\Libs\assimp-4.1.0\Build\include;D:\Libs\assimp-4.1.0\include;D:\Libs\glad\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Libs\glfw3.3\lib;D:\Libs\assimp-4.1.0\Build\code\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Libs\FreeImage3180Win32Win64\FreeImage\Dist\x64;D:\Libs\glm-0.9.9.6\glm;D:\Libs\glfw3.3\include;D:\Libs\assimp-4.1.0\Build\include;D:\Libs\assimp-4.1.0\include;D:\Libs\glad\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Libs\FreeImage3180Win32Win64\FreeImage\Dist\x64;D:\Libs\glfw3.3\lib;D:\Libs\assimp-4.1.0\Build\code\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -103,7 +103,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc140-mt.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FreeImage.lib;assimp-vc140-mt.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,7 +119,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc140-mt.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FreeImage.lib;assimp-vc140-mt.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

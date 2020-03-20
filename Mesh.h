@@ -19,6 +19,11 @@ public:
 	void Init();
 	void Draw();
 
+	const std::vector<Vertex>& GetVertices() const
+	{
+		return vertices;
+	}
+
 private:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
