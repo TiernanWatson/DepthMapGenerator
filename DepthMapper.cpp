@@ -2,6 +2,7 @@
 //
 
 #include <iostream>
+#include <fstream>
 #include <glad/glad.h>
 #include <glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,6 +10,7 @@
 #include "Mesh.h"
 #include "Model.h"
 
+// Width and height needed for our project
 constexpr int WIDTH = 423;
 constexpr int HEIGHT = 563;
 constexpr float FOV = 45.0f;
@@ -40,8 +42,25 @@ const char* fragSource =
 //"	FragColor = vec4(vec3(FragPos.z / 200.0), 1.0);\n"
 "}\n\0";
 
+// True if viewing left, false otherwise
+bool rightCaptured = false;
+
+float xMax = 0;
+float xMaxToCam = 0;
+
+// File details of head being viewed
+std::string headFileDirectory = "";
+std::string headFileName = "";
+
+// Camera view details
+glm::vec3 camPos(180.0f, 0.0f, 0.0f);
+glm::vec3 camDir(-1.0f, 0.0f, 0.0f);
+
 int MakeProgram();
-void OutputImage(const char* filePath);
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void OutputImage(const char* filePath, GLubyte* pixels);
+void OutputCSV(const char* filePath, GLubyte* pixels);
+GLubyte* GetPixels();
 
 int main(int argc, char* argv[])
 {
@@ -71,6 +90,8 @@ int main(int argc, char* argv[])
 	}
 	glfwMakeContextCurrent(window);
 
+	glfwSetKeyCallback(window, KeyCallback);
+
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
@@ -89,6 +110,8 @@ int main(int argc, char* argv[])
 	std::cout << "Loading Model..." << std::endl;
 
 	Model head(argv[1]);
+	headFileName = head.GetFileName();
+	headFileDirectory = head.GetDirectory();
 
 	std::cout << "Finding maximum x vertex..." << std::endl;
 
@@ -102,10 +125,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	glm::vec3 camPos(180.0f, 0.0f, 0.0f);
-	glm::vec3 camDir(-1.0f, 0.0f, 0.0f);
-
 	glUniform1f(glGetUniformLocation(shader, "xMax"), xGreatest);
+	xMax = xGreatest;
 
 	// -------------------------
 	// Do Drawing + Printing
@@ -116,6 +137,7 @@ int main(int argc, char* argv[])
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// Get camera movement input
 		float horizontal = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? 1.0f
 			: glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ? -1.0f
 			: 0.0f;
@@ -129,8 +151,10 @@ int main(int argc, char* argv[])
 		glm::vec3 movement(-forward, vertical, -horizontal);
 		camPos += movement * 0.1f;
 
-		glUniform1f(glGetUniformLocation(shader, "camDist"), camPos.x);
+		glUniform1f(glGetUniformLocation(shader, "camDist"), glm::abs(camPos.x));
+		xMaxToCam = glm::abs(camPos.x) - xMax;
 
+		// Set up model, view, proj matrices
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::translate(model, glm::vec3(0.0f, -120.0f, -120.0f));
@@ -143,17 +167,9 @@ int main(int argc, char* argv[])
 
 		head.Draw();
 
+		// Display head
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-
-		if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
-		{
-			std::string fileName = head.GetFileName();
-			std::string outputFileName = fileName.substr(0, fileName.find_last_of('.'));
-			outputFileName += ".bmp";
-			std::string outputFileFull = head.GetDirectory() + "/" + outputFileName;
-			OutputImage(outputFileFull.c_str());
-		}
 	}
 
 	glfwTerminate();
@@ -201,17 +217,76 @@ int MakeProgram()
 	return shaderProgram;
 }
 
-// Outputs an image of the current frame
-void OutputImage(const char* filePath)
+// Handles GLFW key events
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	// Output image and CSV on Enter
+	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS)
+	{
+		GLubyte* pixels = GetPixels();
+
+		std::string fileName = headFileName;
+		std::string outputFileName = fileName.substr(0, fileName.find_last_of('.'));
+		outputFileName += rightCaptured ? "L" : "R";
+
+		std::string imageOutputPath = headFileDirectory + "/" + outputFileName + ".bmp";
+		OutputImage(imageOutputPath.c_str(), pixels);
+
+		std::string csvOutputPath = headFileDirectory + "/" + outputFileName + ".csv";
+		OutputCSV(csvOutputPath.c_str(), pixels);
+
+		rightCaptured = !rightCaptured;
+		camPos = glm::vec3(rightCaptured ? -180.0f : 180.0f, 0.0f, 0.0f);
+		camDir = glm::vec3(rightCaptured ? 1.0f : -1.0f, 0.0f, 0.0f);
+
+		delete[] pixels;
+	}
+}
+
+// Outputs an image of the current frame
+void OutputImage(const char* filePath, GLubyte* pixels)
+{
+	FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, WIDTH, HEIGHT, 3 * WIDTH, 24, 0x0000FF, 0xFF0000, 0x00FF00, false);
+	FreeImage_Save(FIF_BMP, image, filePath, 0);
+	FreeImage_Unload(image);
+}
+
+// Output a CSV file with pixel values
+void OutputCSV(const char* filePath, GLubyte* pixels)
+{
+	std::ofstream outfile;
+	outfile.open(filePath);
+
+	float min = 255.0f;
+
+	for (int i = 0; i < HEIGHT; i++)
+	{
+		for (int j = 0; j < WIDTH; j++)
+		{
+			float current = (float)pixels[i * WIDTH + 3 * j] / 255.0f;
+			float result = -1.0f * ((float)xMax * (current - 1.0f) - xMaxToCam);
+			outfile << result << ", ";
+
+			if (result < min) min = result;
+		}
+		outfile << "\n";
+	}
+
+	outfile.close();
+}
+
+// Retrieve pixel data from GPU
+GLubyte* GetPixels()
+{
+	GLfloat* fpixels = new GLfloat[3 * WIDTH * HEIGHT];
+
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_FLOAT, fpixels);
+
 	GLubyte* pixels = new GLubyte[3 * WIDTH * HEIGHT];
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-	FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, WIDTH, HEIGHT, 3 * WIDTH, 24, 0x0000FF, 0xFF0000, 0x00FF00, false);
-	FreeImage_Save(FIF_BMP, image, filePath, 0);
-
-	FreeImage_Unload(image);
-	delete[] pixels;
+	return pixels;
 }
